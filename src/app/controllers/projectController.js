@@ -1,5 +1,6 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/auth');
+const aclMiddleware = require('../middlewares/acl');
 
 const Project = require('../models/Project');
 const Task = require('../models/Task');
@@ -31,7 +32,7 @@ router.get('/:projectId', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', aclMiddleware, async (req, res) => {
   try {
     const { title, description, tasks } = req.body;
 
