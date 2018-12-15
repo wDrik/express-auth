@@ -7,9 +7,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(require('./routes'));
 
 const port = 3000;
-
-require('./app/controllers/index')(app);
-
 app.listen(port, () => console.log(`Server started on port ${port}`))
