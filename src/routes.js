@@ -15,6 +15,7 @@ const ProjectController = require('./app/controllers/ProjectController');
  */
 router.post('/auth/register', AuthController.register);
 router.post('/auth/authenticate', AuthController.authenticate);
+router.post('/auth/get_user_by_id', authMiddleware, AuthController.getUserById);
 router.post('/auth/forgot_password', AuthController.forgotPassword);
 router.post('/auth/reset_password', AuthController.resetPassword);
 

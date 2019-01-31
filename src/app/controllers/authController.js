@@ -51,11 +51,20 @@ module.exports = {
       user,
       token: generateToken({
         id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
       })
     });
+  },
+
+  async getUserById(req, res) {
+    try {
+      const { id } = req.body;
+
+      const user = await User.findById(id);
+
+      return res.send({ user });
+    } catch(err) {
+      return res.status(400).send({ error: 'User id not valid!' });
+    }
   },
 
   async forgotPassword(req, res) {
