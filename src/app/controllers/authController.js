@@ -1,15 +1,15 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const mailer = require('../../modules/mailer');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const mailer = require("../../modules/mailer");
 
-const authConfig = require('../../config/auth');
+const authConfig = require("../../config/auth");
 
-const User = require('../models/User');
+const User = require("../models/User");
 
 function generateToken(params = {}) {
   return jwt.sign(params, authConfig.secret, {
-    expiresIn: 86400,
+    expiresIn: 86400
   });
 }
 
@@ -19,7 +19,7 @@ module.exports = {
 
     try {
       if (await User.findOne({ email }))
-        return res.status(400).send({ error: 'User already exists!' })
+        return res.status(400).send({ error: "User already exists!" });
 
       const user = await User.create(req.body);
 
@@ -30,27 +30,26 @@ module.exports = {
         token: generateToken({ id: user.id })
       });
     } catch (err) {
-      return res.status(400).send({ error: 'Registration failed!' });
+      return res.status(400).send({ error: "Registration failed!" });
     }
   },
 
   async authenticate(req, res) {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
 
-    if (!user)
-      return res.status(400).send({ error: 'User not found!' });
+    if (!user) return res.status(400).send({ error: "User not found!" });
 
-    if (!await bcrypt.compare(password, user.password))
-      return res.status(400).send({ error: 'Invalid password!' });
+    if (!(await bcrypt.compare(password, user.password)))
+      return res.status(400).send({ error: "Invalid password!" });
 
     user.password = undefined;
 
     return res.send({
       user,
       token: generateToken({
-        id: user.id,
+        id: user.id
       })
     });
   },
@@ -62,8 +61,8 @@ module.exports = {
       const user = await User.findById(id);
 
       return res.send({ user });
-    } catch(err) {
-      return res.status(400).send({ error: 'User id not valid!' });
+    } catch (err) {
+      return res.status(400).send({ error: "User id not valid!" });
     }
   },
 
@@ -73,34 +72,40 @@ module.exports = {
     try {
       const user = await User.findOne({ email });
 
-      if (!user)
-        return res.status(400).send({ error: 'User not found!' })
+      if (!user) return res.status(400).send({ error: "User not found!" });
 
-      const token = crypto.randomBytes(20).toString('hex');
+      const token = crypto.randomBytes(20).toString("hex");
 
       const now = new Date();
       now.setHours(now.getHours() + 1);
 
       await User.findByIdAndUpdate(user.id, {
-        '$set': {
+        $set: {
           passwordResetToken: token,
           passwordResetExpires: now
         }
       });
 
-      mailer.sendMail({
-        to: email,
-        from: 'iorgen@gmail.com',
-        template: 'auth/forgot_password',
-        context: { token },
-      }, (err) => {
-        if (err) return res.status(400).send({ error: 'Cannot send forgot password email!' })
+      mailer.sendMail(
+        {
+          to: email,
+          from: "iorgen@gmail.com",
+          template: "auth/forgot_password",
+          context: { token }
+        },
+        err => {
+          if (err)
+            return res
+              .status(400)
+              .send({ error: "Cannot send forgot password email!" });
 
-        return res.send();
-      });
-
+          return res.send();
+        }
+      );
     } catch (err) {
-      return res.status(400).send({ error: 'Erro on forgot password, try again!' })
+      return res
+        .status(400)
+        .send({ error: "Erro on forgot password, try again!" });
     }
   },
 
@@ -108,26 +113,28 @@ module.exports = {
     const { email, token, password } = req.body;
 
     try {
-      const user = await User.findOne({ email })
-        .select('+passwordResetToken passwordResetExpires');
+      const user = await User.findOne({ email }).select(
+        "+passwordResetToken passwordResetExpires"
+      );
 
-      if (!user)
-        return res.status(400).send({ error: 'User not found!' });
+      if (!user) return res.status(400).send({ error: "User not found!" });
 
       if (token !== user.passwordResetToken)
-        return res.status(400).send({ error: 'Token invalid!' });
+        return res.status(400).send({ error: "Token invalid!" });
 
       const now = new Date();
 
       if (now > user.passwordResetExpires)
-        return res.status(400).send({ error: 'Token expired, generate a new one!' });
+        return res
+          .status(400)
+          .send({ error: "Token expired, generate a new one!" });
 
       user.password = password;
       await user.save();
 
       return res.send();
     } catch (err) {
-      res.status(400).send({ error: 'Cannot reset password, try again!' })
+      res.status(400).send({ error: "Cannot reset password, try again!" });
     }
   }
-}
+};
